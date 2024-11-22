@@ -5,9 +5,11 @@ import com.pricehistory.util.PropUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 @Getter
@@ -25,26 +27,31 @@ public class DatabaseConfig {
 
     private static void makeConnect() {
         MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setURL("jdbc:mysql://" + host + ":" + port + "/"
-                + databaseName);
-        dataSource.setUser(username);
-        dataSource.setPassword(password);
         try {
+            // Cấu hình DataSource
+            dataSource.setURL("jdbc:mysql://" + host + ":" + port + "/" + databaseName);
+            dataSource.setUser(username);
+            dataSource.setPassword(password);
             dataSource.setUseCompression(true);
             dataSource.setAutoReconnect(true);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-            throw new RuntimeException(throwables);
+
+            // Kết nối thử để kiểm tra cấu hình
+            dataSource.getConnection().close();
+
+            // Tạo Jdbi object và cài đặt plugin
+            jdbi = Jdbi.create(dataSource);
+            jdbi.installPlugin(new SqlObjectPlugin());
+            System.out.println("Kết nối cơ sở dữ liệu thành công.");
+        } catch (SQLException e) {
+            throw new RuntimeException("Không thể kết nối cơ sở dữ liệu.", e);
         }
-        jdbi = Jdbi.create(dataSource);
-        jdbi.installPlugin(new SqlObjectPlugin());
     }
 
 
     public static Jdbi get() {
-        if (jdbi == null) makeConnect();
+        if (jdbi == null) {
+            makeConnect();
+        }
         return jdbi;
     }
-
-
 }

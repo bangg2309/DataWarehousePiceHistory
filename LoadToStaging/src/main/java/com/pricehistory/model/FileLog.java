@@ -4,13 +4,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+
 @Data
 @NoArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class FileConfig {
+public class FileLog {
     int id;
-    String sourceName;
-    String sourceUrl;
-    String filePath;
-    String dateFormat;
+    int idConfig;
+    String fileName;
+    String status;
+    Date extractTime;
+    int totalRecords;
 }
