@@ -7,6 +7,7 @@
         <option value="$PROJECT_DIR$/CrawlData/pom.xml" />
         <option value="$PROJECT_DIR$/LoadToStaging/pom.xml" />
         <option value="$PROJECT_DIR$/LoadToDataWarehouse/pom.xml" />
+        <option value="$PROJECT_DIR$/TransformInStaging/pom.xml" />
       </list>
     </option>
   </component>

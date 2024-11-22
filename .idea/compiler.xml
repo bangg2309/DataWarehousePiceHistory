@@ -10,6 +10,7 @@
         <module name="LoadToStaging" />
         <module name="LoadToDataWarehouse" />
         <module name="CrawlData" />
+        <module name="TransformInStaging" />
       </profile>
     </annotationProcessing>
   </component>
