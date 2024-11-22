@@ -2,7 +2,6 @@ package com.pricehistory.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @Data

@@ -12,4 +12,6 @@ import java.util.Optional;
 public interface FileConfigDAO {
     @SqlQuery(Queries.SELECT_FILE_CONFIG_BY_SOURCE_NAME)
     Optional<FileConfig> findFileConfig(@Bind("sourceName") String sourceName);
+
+
 }
