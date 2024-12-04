@@ -25,7 +25,6 @@ public class DatabaseConfig {
     private static String databaseNameControl = PropUtil.getProp("db.databaseNameControl");
     private static String allowLoadLocalInfile = PropUtil.getProp("db.allowLoadLocalInfile");
 
-
     private static void makeConnectStaging() {
         try {
             MysqlDataSource dataSource = new MysqlDataSource();
