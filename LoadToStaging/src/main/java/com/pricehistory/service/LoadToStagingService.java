@@ -14,6 +14,8 @@ public class LoadToStagingService {
             updateFileLogStatus("EO");
 
             String fileName = getFileNameToFileLog();
+            System.out.println("CSV file path: " + fileName);
+
 
             String loadQuery = Queries.loadQuery(fileName, tableName);
 
