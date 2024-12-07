@@ -25,7 +25,7 @@ public class DatabaseConfig {
     private static String databaseNameControl = PropUtil.getProp("db.databaseNameControl");
     private static String allowLoadLocalInfile = PropUtil.getProp("db.allowLoadLocalInfile");
 
-
+// Bước 7: Kết nối db.staging
     private static void makeConnectStaging() {
         try {
             MysqlDataSource dataSource = new MysqlDataSource();
@@ -42,10 +42,11 @@ public class DatabaseConfig {
             jdbiStaging = Jdbi.create(dataSource);
             jdbiStaging.installPlugin(new SqlObjectPlugin());
         } catch (SQLException e) {
-            throw new RuntimeException("Không thể kết nối cơ sở dữ liệu.", e);
+            //Kết nối thất bài thì
+            throw new RuntimeException("Khong ket noi duoc staging", e);
         }
     }
-
+//   Bước 2 db.control
     private static void makeConnectControl() {
         try {
             MysqlDataSource dataSource = new MysqlDataSource();
@@ -62,7 +63,8 @@ public class DatabaseConfig {
             jdbiControl = Jdbi.create(dataSource);
             jdbiControl.installPlugin(new SqlObjectPlugin());
         } catch (SQLException e) {
-            throw new RuntimeException("Không thể kết nối cơ sở dữ liệu.", e);
+//            Kết nối thất bại thì
+            throw new RuntimeException("Khong ket noi duoc cotrol", e);
         }
     }
 
