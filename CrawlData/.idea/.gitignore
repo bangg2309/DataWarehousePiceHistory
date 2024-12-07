@@ -6,3 +6,6 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+# Thêm dòng này vào để bỏ qua thư mục .idea/
+.idea/

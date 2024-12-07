@@ -33,6 +33,7 @@ CREATE TABLE `file_config`  (
 -- ----------------------------
 -- Records of file_config
 -- ----------------------------
+
 INSERT INTO `file_config` VALUES (1, 'dienmayxanh', 'https://www.dienmayxanh.com/tu-lanh', 'D:/NLU/HKI-Nam4/DW/data/refrigerators_{date}.csv', 'MM-dd-yyyy');
 
 -- ----------------------------
@@ -41,9 +42,12 @@ INSERT INTO `file_config` VALUES (1, 'dienmayxanh', 'https://www.dienmayxanh.com
 DROP TABLE IF EXISTS `file_logs`;
 CREATE TABLE `file_logs`  (
   `id` int NOT NULL AUTO_INCREMENT,
+
   `id_config` int NULL DEFAULT NULL,
   `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `status` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+
+
   `extract_time` datetime NULL DEFAULT NULL,
   `total_records` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
