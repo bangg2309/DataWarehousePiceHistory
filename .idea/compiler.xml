@@ -7,11 +7,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="LoadToStaging" />
-        <module name="LoadToDataWarehouse" />
-        <module name="CrawlData" />
-        <module name="TransformInStaging" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="CrawlData" target="17" />
+      <module name="LoadToDataWarehouse" target="21" />
+      <module name="LoadToStaging" target="21" />
+      <module name="TransformInStaging" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>
