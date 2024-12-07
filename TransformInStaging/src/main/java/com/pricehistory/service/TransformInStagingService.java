@@ -10,11 +10,18 @@ public class TransformInStagingService {
 
     public void transformInStaging() {
         if (isTodayDataExistByStatus("TR")) {
-            updateFileLogStatus("LO");
+            updateFileLogStatus("TO");
             System.out.println("Bắt đầu transform dữ liệu vào staging...");
 
             DatabaseConfig.getStaging().useHandle(handle -> handle.execute("TRUNCATE TABLE " + tableName));
-            DatabaseConfig.getStaging().useHandle(handle -> handle.createCall("{call transform_refrigerators_data()}").invoke());
+            try {
+                DatabaseConfig.getStaging().useHandle(handle -> handle.createCall("{call transform_refrigerators_data()}").invoke());
+            } catch (Exception e) {
+                e.printStackTrace();
+                updateFileLogStatus("TF");
+                System.out.println("Transform dữ liệu vào staging thất bại.");
+                return;
+            }
 
             updateFileLogStatus("LR");
             System.out.println("Transform dữ liệu vào staging thành công.");
