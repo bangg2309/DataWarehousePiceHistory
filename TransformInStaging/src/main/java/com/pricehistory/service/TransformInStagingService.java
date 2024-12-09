@@ -1,10 +1,17 @@
 package com.pricehistory.service;
 
 import com.pricehistory.configuration.DatabaseConfig;
+import com.pricehistory.constant.MESSAGES;
 import com.pricehistory.constant.Queries;
 import com.pricehistory.util.PropUtil;
+import org.slf4j.LoggerFactory;
+
+import org.slf4j.Logger;
+
 
 public class TransformInStagingService {
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(TransformInStagingService.class);
+    private MailService mailService = MailService.getInstance();
 
 
     private String tableName = PropUtil.getProp("stagingTableName");
@@ -18,26 +25,35 @@ public class TransformInStagingService {
             //B4. update trong trong control.file_log thành TO
             updateFileLogStatus("TO");
             System.out.println("Bắt đầu transform dữ liệu vào staging...");
-             //kết nối thành công db.staging thì thực hiện truncate table staging
+             //Bước 5.kết nối thành công db.staging thì thực hiện truncate table staging
             DatabaseConfig.getStaging().useHandle(handle -> handle.execute("TRUNCATE TABLE " + tableName));
             try {
                 //Gọi câu lệnh procedure transform_refrigerators_data()
                 DatabaseConfig.getStaging().useHandle(handle -> handle.createCall("{call transform_refrigerators_data()}").invoke());
             } catch (Exception e) {
                 e.printStackTrace();
-//                5.2.a Cập nhật status của record trong control.file_log thành TF
+                // Ghi log lỗi
+                logger.error(MESSAGES.ERROR_TRANSFORM, e);
+                // Gửi email thông báo lỗi
+                mailService.sendMail(MESSAGES.ERROR_TRANSFORM, "Lỗi: " + e.getMessage());
+//                Cập nhật status của record trong control.file_log thành TF
                 updateFileLogStatus("TF");
-//                5.2 Transform không thành công
+//                 Transform không thành công
                 System.out.println("Transform dữ liệu vào staging thất bại.");
                 return;
             }
 //          Bước  6 Transform thành công
 
             updateFileLogStatus("LR");
+            // Gửi email thông báo thành công
+            mailService.sendMail(MESSAGES.SUCCESS_TRANSFORM, MESSAGES.SUCCESS_TRANSFORM);
             // Bước 7
             System.out.println("Transform dữ liệu vào staging thành công.");
         } else {
             System.out.println("Không có dữ liệu để transform vào staging.");
+//            System.out.println(MESSAGES.NO_DATA_LOAD_TRANSFORM);
+            mailService.sendMail(MESSAGES.NO_DATA_LOAD_TRANSFORM, MESSAGES.NO_DATA_LOAD_TRANSFORM);
+
         }
     }
 

@@ -64,7 +64,7 @@ public class DatabaseConfig {
             jdbiControl.installPlugin(new SqlObjectPlugin());
         } catch (SQLException e) {
 //            Kết nối thất bại thì
-            throw new RuntimeException("Khong ket noi duoc cotrol", e);
+            throw new RuntimeException("Loi khong ket noi duoc cotrol", e);
         }
     }
 
