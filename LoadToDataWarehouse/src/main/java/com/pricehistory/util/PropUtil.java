@@ -1,5 +1,7 @@
 package com.pricehistory.util;
 
+import org.slf4j.Logger;
+
 import java.util.Properties;
 
 public class PropUtil {
@@ -7,9 +9,11 @@ public class PropUtil {
 
     static {
         try {
+            //  1. Load properties file
             prop.load(PropUtil.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (Exception e) {
-            System.out.println("File config not found");
+            Logger logger = org.slf4j.LoggerFactory.getLogger(PropUtil.class);
+            logger.error("Khong load duoc file config", e);
             e.printStackTrace();
         }
     }

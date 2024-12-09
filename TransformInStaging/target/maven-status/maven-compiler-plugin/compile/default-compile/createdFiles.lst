@@ -1,0 +1,7 @@
+com\pricehistory\constant\Queries.class
+com\pricehistory\service\TransformInStagingService.class
+com\pricehistory\TransformInStagingApplication.class
+com\pricehistory\dao\FileLogDAO.class
+com\pricehistory\configuration\DatabaseConfig.class
+com\pricehistory\util\PropUtil.class
+com\pricehistory\model\FileLog.class

@@ -7,5 +7,5 @@ public class Queries {
 
     public static final String SELECT_FILENAME_FILE_LOGS_TODAY = "SELECT file_name FROM file_logs WHERE DATE(extract_time) = CURDATE()";
 
-
+    public static String EXPORT_DATA_TO_FILE = "SELECT * INTO OUTFILE '" + "{output_path}" + "' FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n' FROM " + "{table_name}";
 }

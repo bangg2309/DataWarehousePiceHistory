@@ -1,5 +1,6 @@
 package com.pricehistory.service;
 
+import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
@@ -10,87 +11,86 @@ import com.pricehistory.util.PropUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-public class TransferToDataMartService {
 
-    String host = PropUtil.getProp("db.host");
-    String user = PropUtil.getProp("db.username");
-    String password = PropUtil.getProp("db.password");
-    String database = PropUtil.getProp("db.databaseNameDatawarehouse");
+public class TransferToDataMartService {
+    //    Database
     String tableName = PropUtil.getProp("db.tableName");
     String outputPath = PropUtil.getProp("db.outputPath");
-
     //    Server
-    String hostServer = PropUtil.getProp("server.presentation.host");
-    String userServer = PropUtil.getProp("server.presentation.username");
-    String directoryServer = PropUtil.getProp("server.presentation.directory");
-    String passwordServer = PropUtil.getProp("server.presentation.password");
+    String hostRemote = PropUtil.getProp("remote.host");
+    String userRemote = PropUtil.getProp("remote.username");
+    String directoryRemote = PropUtil.getProp("remote.directory");
+    String passwordRemote = PropUtil.getProp("remote.password");
+    String scriptNameRemote = PropUtil.getProp("remote.scriptName");
+
 
 
     public void transferToDataMart() throws IOException {
         if (isTodayDataExistByStatus("MR")) {
-//            updateFileLogStatus("MO");
-//            exportUsingOutfile(host, user, password, database, tableName, outputPath);
-            transferFileToDataMart(hostServer, 22, userServer, passwordServer);
+            exportUsingOutfile(tableName, outputPath);
+            transferFileToDataMart(hostRemote, userRemote, passwordRemote);
             System.out.println("Data has been transferred to Data Mart");
+            updateFileLogStatus("SC");
         } else {
             System.out.println("No data to transfer");
         }
     }
 
-    private void exportUsingOutfile(String host, String user, String password, String database, String tableName, String outputPath) {
-        String query = String.format(
-                "SELECT * FROM %s.%s INTO OUTFILE '%s' " +
-                        "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n';",
-                database, tableName, outputPath
-        );
+    private void exportUsingOutfile(String tableName, String outputPath) {
+        String query = Queries.EXPORT_DATA_TO_FILE
+                .replace("{table_name}", tableName)
+                .replace("{output_path}", outputPath);
 
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database, user, password);
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute(query);
-            System.out.println("Data exported to: " + outputPath);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        DatabaseConfig.getJdbiDatawarehouse().useHandle(handle -> handle.execute(query));
     }
 
 
-    private void transferFileToDataMart(String server, int port, String username, String password) throws IOException {
+    private void transferFileToDataMart(String server, String username, String password) throws IOException {
         JSch jsch = new JSch();
         Session session = null;
         ChannelSftp channelSftp = null;
+        ChannelExec channelExec = null;
 
         try {
             // Thiết lập session
-            session = jsch.getSession(username, server, port);
+            session = jsch.getSession(username, server, 22);
             session.setPassword(password);
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect();
 
-            // Tạo kênh SFTP
+            // Tạo kênh SFTP để tải file lên
             channelSftp = (ChannelSftp) session.openChannel("sftp");
             channelSftp.connect();
 
-            // Upload file
             File file = new File(outputPath);
-
-            String remotePath = "D:\\NLU\\HKI-Nam4\\DW\\remote\\" + file.getName();
+            String remotePath = directoryRemote + "/" + file.getName();
 
             System.out.println("Uploading file to remote path: " + remotePath);
             channelSftp.put(new FileInputStream(file), remotePath);
             System.out.println("File uploaded successfully to: " + remotePath);
 
+            // Đóng kênh SFTP
+            channelSftp.disconnect();
 
+            // Thực thi file .jar trên máy remote
+            System.out.println("Executing .jar file on remote server...");
+            String command = String.format("cd %s && java -jar %s", directoryRemote, scriptNameRemote);
+
+            channelExec = (ChannelExec) session.openChannel("exec");
+            channelExec.setCommand(command);
+            channelExec.setErrStream(System.err);
+            channelExec.setOutputStream(System.out);
+
+            channelExec.connect();
+            System.out.println("Command executed successfully!");
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new IOException("Failed to transfer file to Data Mart", e);
+            throw new IOException("Failed to transfer file or execute jar on Data Mart", e);
         } finally {
+            if (channelExec != null && channelExec.isConnected()) {
+                channelExec.disconnect();
+            }
             if (channelSftp != null && channelSftp.isConnected()) {
                 channelSftp.disconnect();
             }
@@ -99,8 +99,6 @@ public class TransferToDataMartService {
             }
         }
     }
-
-
 
 
     private boolean isTodayDataExistByStatus(String status) {
