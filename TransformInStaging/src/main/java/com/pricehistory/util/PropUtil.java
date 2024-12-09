@@ -9,6 +9,7 @@ public class PropUtil {
         try {
             prop.load(PropUtil.class.getClassLoader().getResourceAsStream("application.properties"));
         } catch (Exception e) {
+//            bước 1.1
             System.out.println("File config not found");
             e.printStackTrace();
         }
