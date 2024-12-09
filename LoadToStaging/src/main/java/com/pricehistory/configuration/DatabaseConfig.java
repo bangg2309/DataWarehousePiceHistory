@@ -76,5 +76,4 @@ public class DatabaseConfig {
         return jdbiControl;
     }
 
-
 }

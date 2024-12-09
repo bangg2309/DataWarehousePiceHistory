@@ -14,7 +14,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
@@ -44,7 +43,6 @@ public class CrawlDataService {
             return;
         }
 
-
         FileConfig fileConfig = loadFileConfig(sourceName);
 
         String sourceUrl = fileConfig.getSourceUrl();
@@ -57,55 +55,75 @@ public class CrawlDataService {
         filePath = filePath.replace("{date}", currentDate);
 
 
-        // Kết nối và tải trang web
-        Document doc = Jsoup.connect(sourceUrl).get();
         // Tạo FileWriter để ghi dữ liệu vào file CSV
         FileWriter csvWriter = new FileWriter(filePath, StandardCharsets.UTF_8);
         csvWriter.append("Name,Product_Code,Image_url,Brand,Price,Price_Sale,Discount,Created Date\n");
 
-        // Lấy danh sách sản phẩm từ trang
-        Elements products = doc.select("li.item");
-        int sizeProduct = products.size();
+        int pageIndex = 0;
+        int totalProducts = 0;
 
-        for (Element product : products) {
-            String name = product.select("a[data-name]").attr("data-name").replace(",", " "); // Lấy tên sản phẩm
-            String image_url = product.select("img.thumb").attr("data-src"); // Lấy đường dẫn hình ảnh
-            String brand_name = product.select("a[data-brand]").attr("data-brand").replace(",", " "); // Lấy thương hiệu sản phẩm
-            String price = product.select(".price-old").text().replace(",", " "); // Lấy giá cũ
-            String price_sale = product.select("strong.price").text().replace(",", " "); // Lấy giá hiện tại
-            String discount = product.select(".percent").text().replace("-", "").replace("%", "").trim(); // Lấy thông tin giảm giá và chuyển về dạng số
-            String product_code = name.split(" ")[name.split(" ").length - 1]; // Tách mã sản phẩm
-            String createdDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        while (true) {
+            try {
+                String urlWithPage = sourceUrl + "#c=1943   &o=13&pi=" + pageIndex;
+                Document doc = Jsoup.connect(urlWithPage).get();
+                Elements products = doc.select("li.item");
+                if (products.isEmpty()) {
+                    System.out.println("Không còn sản phẩm nào trên trang " + pageIndex);
+                    break;
+                }
 
-            // Chuyển đổi discount sang số thập phân
-            double discountValue = discount.isEmpty() ? 0.0 : Double.parseDouble(discount) / 100.0;
+                totalProducts += products.size();
 
-            // Ghi dữ liệu vào file CSV
-            csvWriter.append(String.join(",", name, product_code, image_url, brand_name, price, price_sale, String.valueOf(discountValue), createdDate));
-            csvWriter.append("\n");
+                for (Element product : products) {
+                    String name = product.select("a[data-name]").attr("data-name").replace(",", " ");
+                    String image_url = product.select("img.thumb").attr("data-src");
+                    String brand_name = product.select("a[data-brand]").attr("data-brand").replace(",", " ");
+                    String price = product.select(".price-old").text().replace(",", " ");
+                    String price_sale = product.select("strong.price").text().replace(",", " ");
+                    String discount = product.select(".percent").text().replace("-", "").replace("%", "").trim();
+                    String product_code = name.split(" ")[name.split(" ").length - 1];
+                    String createdDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                    // Chuyển đổi discount sang số thập phân
+                    double discountValue = discount.isEmpty() ? 0.0 : Double.parseDouble(discount) / 100.0;
+
+                    // Ghi dữ liệu vào file CSV
+                    csvWriter.append(String.join(",", name, product_code, image_url, brand_name, price, price_sale, String.valueOf(discountValue), createdDate));
+                    csvWriter.append("\n");
+                }
+                if (pageIndex == 9) {
+                    break;
+                }
+                pageIndex++;
+
+            } catch (IOException e) {
+                System.err.println("Lỗi khi kết nối URL: " + e.getMessage());
+                break; // Dừng vòng lặp nếu có lỗi kết nối
+            }
         }
-
 
         // Đóng file sau khi ghi xong
         csvWriter.flush();
         csvWriter.close();
 
-        if (sizeProduct == 0) {
+
+        if (totalProducts == 0) {
             System.err.println("Khong lay duoc du lieu");
             return;
         }
 
         // Ghi dữ liệu vào log
         String finalFilePath = filePath;
+        int finalTotalProducts = totalProducts;
         DatabaseConfig.get().withHandle(handle -> {
             try {
                 handle.attach(FileLogDAO.class)
-                        .insertFileLog(fileConfig.getId(), finalFilePath, "ER", new Date(), sizeProduct);
+                        .insertFileLog(fileConfig.getId(), finalFilePath, "ER", new Date(), finalTotalProducts);
                 System.out.println("Lay du lieu thanh cong");
             } catch (Exception e) {
                 System.err.println("Loi khong lay duoc du lieu: " + e.getMessage());
             }
-            return null; // Phải trả về null vì `withHandle` yêu cầu
+            return null;
         });
     }
 }

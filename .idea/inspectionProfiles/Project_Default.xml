@@ -7,16 +7,19 @@
         <list>
           <option value="CrawlData" />
           <option value="LoadToStaging" />
+          <option value="TransformInStaging" />
         </list>
       </option>
       <option name="ignoredPackages">
         <list>
           <option value="mysql:mysql-connector-java:8.0.30" />
           <option value="mysql:mysql-connector-java:8.0.30" />
+          <option value="mysql:mysql-connector-java:8.0.30" />
         </list>
       </option>
       <option name="ignoredReasons">
         <list>
+          <option value="Not exploitable" />
           <option value="Not exploitable" />
           <option value="Not exploitable" />
         </list>

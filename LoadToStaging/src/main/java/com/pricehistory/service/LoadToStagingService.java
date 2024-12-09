@@ -3,32 +3,50 @@ package com.pricehistory.service;
 import com.pricehistory.configuration.DatabaseConfig;
 import com.pricehistory.constant.Queries;
 import com.pricehistory.util.PropUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoadToStagingService {
+    private static final Logger logger = LoggerFactory.getLogger(LoadToStagingService.class);
     private String tableName = PropUtil.getProp("stagingTableName");
 
-
     public void loadToStaging() {
-        if (isTodayDataExistByStatus("ER")) {
+        try {
+            if (isTodayDataExistByStatus("ER")) {
+                updateFileLogStatus("EO");
 
-            updateFileLogStatus("EO");
+                String fileName = getFileNameToFileLog();
+                logger.info("CSV file path: {}", fileName);
 
-            String fileName = getFileNameToFileLog();
-            System.out.println("CSV file path: " + fileName);
+                String loadQuery = Queries.loadQuery(fileName, tableName);
 
+                // Truncate table
+                int truncateResult = DatabaseConfig.getStaging()
+                        .withHandle(handle -> handle.execute("TRUNCATE TABLE " + tableName));
 
-            String loadQuery = Queries.loadQuery(fileName, tableName);
+                if (truncateResult == 0) {
+                    logger.info("Truncate table '{}' thành công.", tableName);
+                }
 
-            DatabaseConfig.getStaging().useHandle(handle -> handle.execute("TRUNCATE TABLE " + tableName));
-            DatabaseConfig.getStaging().useHandle(handle -> handle.execute(loadQuery));
+                // Load data
+                int loadResult = DatabaseConfig.getStaging()
+                        .withHandle(handle -> handle.execute(loadQuery));
 
-            updateFileLogStatus("TR");
-            System.out.println("Load dữ liệu vào staging thành công.");
-        } else {
-            System.out.println("Không có dữ liệu để load vào staging.");
+                if (loadResult > 0) {
+                    updateFileLogStatus("TR");
+                    logger.info("Load dữ liệu vào staging thành công. Số bản ghi: {}", loadResult);
+                } else {
+                    logger.error("Lỗi không load được dữ liệu");
+                    updateFileLogStatus("FL");
+                }
+
+            } else {
+                logger.warn("Không có dữ liệu để load vào staging.");
+            }
+        } catch (Exception e) {
+            logger.error("Lỗi khi load dữ liệu vào staging.", e);
+            updateFileLogStatus("FL");
         }
-
-
     }
 
     private boolean isTodayDataExistByStatus(String status) {
@@ -51,5 +69,4 @@ public class LoadToStagingService {
                 .findFirst()
                 .orElse(""));
     }
-
 }
